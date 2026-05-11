@@ -1,0 +1,70 @@
+# This is a basic workflow to help you get started with Actions
+
+name: ubuntu-image-grub-nanopi-r6c
+on: workflow_dispatch
+#workflow_dispatch
+#[push]
+jobs:
+  command:
+    name: Use Linux commands
+    runs-on: ubuntu-24.04-arm
+    steps:
+    # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - name: Checkout
+        uses: actions/checkout@main
+
+      - name: u-boot
+        run: /bin/bash  ./das-u-boot.sh nanopi-r6c-rk3588s_defconfig
+
+      - name: rootfs
+        run: |
+            ls
+            chmod +x ubuntu-image.sh
+            sudo  ./ubuntu-image.sh
+
+      - name: disk image
+        run:  |
+            chmod +x disk_image.sh
+            sudo  ./disk_image.sh arm64 nanopi-r6c rk3588s-nanopi-r6c
+            echo "============================"
+            ls -l
+            echo "============================="
+ 
+#      - name: Upload a diisk image
+#        uses: actions/upload-artifact@v4.5.0
+#        with:
+#         name: ubuntu-image-orangepi-5-plus
+#         path: ./Ubuntu-*img.xz
+#         compression-level: 0
+#          # The desired behavior if no files are found using the provided path.
+#         if-no-files-found: error
+
+      - name: Get current date
+        id: date
+        run: echo "now=$(date +'%Y-%m-%d %H:%M')" >> $GITHUB_OUTPUT
+
+      - name: Get kernel version
+        id: kernel
+        run: cat kernel_version >> $GITHUB_OUTPUT
+
+
+# 旧: upload-artifact のステップをコメントアウトまたは削除し、以下を追加
+      - name: Create Release and Upload
+        uses: softprops/action-gh-release@master
+        with:
+          # 実行するたびにユニークなタグ名（例: build-1, build-2...）を付けます
+          tag_name: nanopi-r6c-g-${{ github.run_number }}
+          name: "FriendlyElec NanoPi R6C Grub Disk Image Build ${{ github.run_number }}"
+          body: |
+            FriendlyElec NanoPi R6C Grub Boot Custom Image
+            Build Date: ${{ steps.date.outputs.now }}
+            Kernel Version: ${{ steps.kernel.outputs.kernel_version }}
+          draft: false
+          prerelease: false
+          # ここに圧縮済みファイルのパスを指定します
+          files: |
+            ./Ubuntu-*img.xz
+            ./sd-card.txt
+            ./u-boot-*.bin
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
