@@ -160,10 +160,23 @@ UUID=${root_uuid} /      	ext4 defaults,noatime,x-systemd.growfs 0 1
 UUID=${boot_uuid} /boot 	vfat defaults 0 2
 EOF
 
-mount --bind /dev  "${mount_point}/root/dev"
-mount --bind /proc "${mount_point}/root/proc"
-mount --bind /sys  "${mount_point}/root/sys"
+# Write bootloader to disk image
+if [ -f "u-boot-rockchip.bin" ]; then
+    dd if="u-boot-rockchip.bin" of="${loop}" seek=1 bs=32k conv=fsync
+else
+	echo "u-boot-rockchip.bin not found"
+	exit 1
+fi
 
+#mount --bind /dev  "${mount_point}/root/dev"
+#mount --bind /proc "${mount_point}/root/proc"
+#mount --bind /sys  "${mount_point}/root/sys"
+
+mount dev-live -t devtmpfs "$mount_point/root/dev"
+mount devpts-live -t devpts -o nodev,nosuid "$mount_point/root/dev/pts"
+mount proc-live -t proc "$mount_point/root/proc"
+mount sysfs-live -t sysfs "$mount_point/root/sys"
+mount securityfs -t securityfs "$mount_point/root/sys/kernel/security"
 # --- GRUBインストール実行 ---
 chroot ${mount_point}/root /bin/bash -c "
     set -e
@@ -177,9 +190,15 @@ chroot ${mount_point}/root /bin/bash -c "
 "
 
 # --- 後片付け ---
-umount "${mount_point}/root/sys"
-umount "${mount_point}/root/proc"
-umount "${mount_point}/root/dev"
+umount "$mount_point/root/sys/kernel/security"
+umount "$mount_point/root/sys"
+umount "$mount_point/root/proc"
+umount "$mount_point/root/dev/pts"
+umount "$mount_point/root/dev"
+
+#umount "${mount_point}/root/sys"
+#umount "${mount_point}/root/proc"
+#umount "${mount_point}/root/dev"
 
 DTB_FILENAME="$3.dtb"
 
@@ -219,17 +238,6 @@ sed -i "s/DTB_FILENAME_PLACEHOLDER/${DTB_FILENAME}/" ${mount_point}/root/etc/ker
 chmod +x ${mount_point}/root/etc/kernel/postinst.d/zzzz-arm64-grub-dtb-fix
 echo GRUB_CMDLINE_LINUX='"'"$(cat ${mount_point}/root/etc/kernel/cmdline)"'"' >> ${mount_point}/root/etc/default/grub
 sed -i 's/GRUB_CMDLINE_LINUX_DEFAULT="quiet splash"/GRUB_CMDLINE_LINUX_DEFAULT="text"/' ${mount_point}/root/etc/default/grub
-
-mount --bind /dev  "${mount_point}/root/dev"
-mount --bind /proc "${mount_point}/root/proc"
-mount --bind /sys  "${mount_point}/root/sys"
-
-#chroot ${mount_point}/root /bin/bash -c "/etc/kernel/postinst.d/zzzz-arm64-grub-dtb-fix ${kernel_version}"
-
-
-umount "${mount_point}/root/sys"
-umount "${mount_point}/root/proc"
-umount "${mount_point}/root/dev"
 
 mkdir -p ${mount_point}/root/boot/rockchip/$kernel_version
 cp ${mount_point}/root${dtbs_install_path}${fdt_name} ${mount_point}/root/boot/rockchip/$kernel_version
