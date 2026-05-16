@@ -28,6 +28,8 @@ rootfs:
 #      - standard
 customization:
   extra-packages:
+    - name: "u-boot-tools"
+    - name: "u-boot-menu"
     - name: "grub-efi-arm64"
     - name: "ubuntu-desktop-minimal"
     - name: "linux-firmware"
