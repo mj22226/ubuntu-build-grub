@@ -41,6 +41,9 @@ customization:
     - name: "oem-config"
     - name: "oem-config-debconf"
     - name: "ubiquity-slideshow-ubuntu"
+    - name: "apparmor"
+    - name: "apparmor-utils"
+    - name: "apparmor-profiles"
   extra-snaps:
     - name: snapd
     - name: mesa-2404
