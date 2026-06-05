@@ -49,7 +49,7 @@ echo ""
 			exit 1
 		fi
 
-	echo 'CONFIG_SYS_SOC="rk3588"' >> configs/$1
+	echo 'CONFIG_SYS_SOC="rk3568"' >> configs/$1
         echo 'CONFIG_CMD_BOOTEFI=y' >> configs/$1
         echo 'CONFIG_EFI_LOADER=y' >> configs/$1
         echo 'CONFIG_BLK=y' >> configs/$1
